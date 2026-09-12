@@ -1185,11 +1185,41 @@ app.get("/api/weather", async (_req, res) => {
     return res.json(payload);
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("Weather fetch failed:", err.message);
-    // Graceful degradation — serve the last known-good reading rather than
-    // a hard error, if one exists, even though it's past its cache window.
-    if (weatherCache.data) return res.json(weatherCache.data);
-    return res.status(503).json({ ok: false, error: "Weather data is temporarily unavailable." });
+    console.warn("Weather fetch failed (attempt 1):", err);
+
+    // ✅ One retry before giving up — covers the common case of a cold
+    // start / transient network blip where the very first outbound
+    // request fails but a second, moments later, succeeds.
+    try {
+      const retryController = new AbortController();
+      const retryTimeoutId = setTimeout(() => retryController.abort(), 8000);
+      const retryUrl = `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER_LOCATION.lat}&longitude=${WEATHER_LOCATION.lng}&current=temperature_2m,weather_code&timezone=auto`;
+      const retryResponse = await fetch(retryUrl, { signal: retryController.signal });
+      clearTimeout(retryTimeoutId);
+      const retryData = await retryResponse.json();
+
+      if (!retryResponse.ok || !retryData.current || typeof retryData.current.temperature_2m !== "number") {
+        throw new Error(retryData.reason || "Weather provider returned no current data.");
+      }
+
+      const { icon, condition } = mapWeatherCode(retryData.current.weather_code);
+      const payload = {
+        ok: true,
+        temperatureC: retryData.current.temperature_2m,
+        condition,
+        icon,
+        location: "Iba Campus",
+        updatedAt: retryData.current.time || new Date().toISOString()
+      };
+      weatherCache = { data: payload, fetchedAt: Date.now() };
+      return res.json(payload);
+    } catch (retryErr) {
+      console.warn("Weather fetch failed (attempt 2):", retryErr);
+      // Graceful degradation — serve the last known-good reading rather than
+      // a hard error, if one exists, even though it's past its cache window.
+      if (weatherCache.data) return res.json(weatherCache.data);
+      return res.status(503).json({ ok: false, error: "Weather data is temporarily unavailable." });
+    }
   }
 });
 
