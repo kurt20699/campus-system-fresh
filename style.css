@@ -575,6 +575,7 @@ body {
     background: #eef3f8;
     padding: 4px;
     border-radius: 10px;
+    flex-shrink: 0;
 }
 .alerts-tips-tab {
     flex: 1;
@@ -613,6 +614,7 @@ body {
     padding: 12px 14px;
     margin-bottom: 14px;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 .campus-weather-card .weather-icon {
     font-size: 30px;
@@ -664,13 +666,19 @@ body {
 }
 
 /* ── Campus Tips card (mirrors .alert-banner sizing/spacing) ── */
-.campus-tips-card {
+#campusTipsCard.campus-tips-card {
     background: #fff8e1;
     border-left: 5px solid #f0a500;
     border-radius: 8px;
     padding: 12px 14px;
     margin-bottom: 20px;
     box-sizing: border-box;
+    height: 140px;           /* ✅ same fixed height as .alert-banner */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
 }
 .campus-tips-header {
     display: flex;
@@ -691,6 +699,23 @@ body {
     line-height: 1.5;
     color: #4f3403;
     word-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .campus-tips-card {
+        height: auto;
+    }
+    .campus-tips-text {
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+        overflow: visible;
+    }
 }
 .campus-tips-nav {
     display: flex;
@@ -746,15 +771,17 @@ body {
 }
 
 /* Alert Banner */
-.alert-banner {
+#alertBanner.alert-banner {
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 20px;
     display: flex;
     gap: 10px;
     align-items: center;
-    min-height: 76px;      /* ✅ consistent card size regardless of content */
+    height: 140px;          /* ✅ FIXED height — guarantees exact parity with .campus-tips-card */
     box-sizing: border-box;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .alert-icon {

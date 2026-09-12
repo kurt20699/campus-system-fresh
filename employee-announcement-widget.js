@@ -25,7 +25,13 @@
         transition: box-shadow 0.2s, transform 0.15s;
         position: relative;
         padding-bottom: 32px !important;
-        min-height: 108px;
+        min-height: 140px;      /* ✅ matches .alert-banner / .campus-tips-card fixed height */
+        }
+        @media (max-width: 768px) {
+        #alertBanner.employee-clickable {
+            height: auto;
+            min-height: 0;
+        }
         }
         #alertBanner.employee-clickable:hover {
         box-shadow: 0 4px 16px rgba(44,90,160,0.18);

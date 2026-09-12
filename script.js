@@ -3096,14 +3096,34 @@ function initializeMap() {
     if (state.mapResizeObserver) {
         state.mapResizeObserver.disconnect();
     }
+    if (state._mapResizeRaf) {
+        cancelAnimationFrame(state._mapResizeRaf);
+        state._mapResizeRaf = null;
+    }
+    state._lastMapSize = null;
+
     const mapContainer = document.getElementById('map');
     if (mapContainer && window.ResizeObserver) {
-        state.mapResizeObserver = new ResizeObserver(() => {
+        state.mapResizeObserver = new ResizeObserver((entries) => {
+            const box = entries[0]?.contentBoxSize?.[0];
+            const w = box ? Math.round(box.inlineSize) : Math.round(mapContainer.clientWidth);
+            const h = box ? Math.round(box.blockSize) : Math.round(mapContainer.clientHeight);
+
+            if (state._lastMapSize && state._lastMapSize.w === w && state._lastMapSize.h === h) {
+                return;
+            }
+            state._lastMapSize = { w, h };
+
             if (window._mapGestureActive) {
                 window._mapResizePending = true;
                 return;
             }
-            state.map.resize();
+
+            if (state._mapResizeRaf) cancelAnimationFrame(state._mapResizeRaf);
+            state._mapResizeRaf = requestAnimationFrame(() => {
+                state._mapResizeRaf = null;
+                state.map.resize();
+            });
         });
         state.mapResizeObserver.observe(mapContainer);
     }
